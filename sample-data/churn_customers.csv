@@ -1,0 +1,11 @@
+customer_name,email,plan_type,subscription_start,last_login,support_tickets,monthly_usage,churn_score,risk_action,email_sent
+John Smith,john.smith@techcorp.com,Premium,2024-01-15,2026-05-02,5,8%,,,
+Sarah Johnson,sarah.j@growthlab.io,Basic,2025-03-20,2026-06-01,0,87%,,,
+Michael Chen,m.chen@designstudio.co,Premium,2023-11-08,2026-04-10,8,11%,,,
+Emily Davis,emily.davis@startupx.com,Pro,2025-06-14,2026-05-28,1,74%,,,
+Robert Wilson,r.wilson@oldschool.net,Basic,2022-07-30,2026-03-15,12,5%,,,
+Amanda Torres,a.torres@ecomshop.store,Pro,2024-09-01,2026-05-31,0,91%,,,
+David Park,david.p@freelancehub.com,Premium,2025-01-10,2026-04-22,3,19%,,,
+Jessica Lee,jess.lee@mediahouse.tv,Basic,2024-04-18,2026-05-29,1,68%,,,
+Kevin Brown,k.brown@legacysys.com,Pro,2023-03-05,2026-02-28,15,3%,,,
+Priya Patel,priya.p@innovatelab.in,Premium,2025-08-22,2026-06-02,0,95%,,,

@@ -1,0 +1,600 @@
+{
+  "name": "Churn Detection & Retention Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4cdf5c95-9d2a-4500-b626-cfcc9ce08c2d",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1wsoO79XrSirGiNkPn6wqirwUDRD4STJC6_W_0ed_EcU",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wsoO79XrSirGiNkPn6wqirwUDRD4STJC6_W_0ed_EcU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1752963696,
+          "mode": "list",
+          "cachedResultName": "churn_customers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wsoO79XrSirGiNkPn6wqirwUDRD4STJC6_W_0ed_EcU/edit#gid=1752963696"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d0ae0fae-64cf-4f20-bfd4-b8557d8393d4",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Eh6sOsmhX5WkmGuy",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "04fe07b0-8333-4405-8dd7-493ad4e625f2",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Analyze this customer data and return a churn risk assessment.\n\nCustomer Data:\n- Name: {{ $json.customer_name }}\n- Plan: {{ $json.plan_type }}\n- Subscription Start: {{ $json.subscription_start }}\n- Last Login: {{ $json.last_login }}\n- Support Tickets: {{ $json.support_tickets }}\n- Monthly Usage: {{ $json.monthly_usage }}\n\nRespond ONLY with this exact JSON format, no other text:\n{\n  \"churn_score\": 75,\n  \"risk_action\": \"your recommended action here\",\n  \"risk_reason\": \"one sentence explanation here\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        96
+      ],
+      "id": "00bb35b5-5e4c-4f34-9b7d-1f0399cc8866",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "nJkDLQM3Vzt8imhG",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst loopData = $('Loop Over Items').item.json;\n\nconst text = item.output[0].content[0].text;\nconst cleaned = text.replace(/[\\r\\n]/g, '').trim();\nconst parsed = JSON.parse(cleaned);\n\nreturn {\n  row_number: loopData.row_number,\n  customer_name: loopData.customer_name,\n  email: loopData.email,\n  plan_type: loopData.plan_type,\n  churn_score: parseInt(parsed.churn_score),\n  risk_action: parsed.risk_action,\n  risk_reason: parsed.risk_reason\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        96
+      ],
+      "id": "d7eb8cbb-90ce-4f70-956f-a0ebbd01e919",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1wsoO79XrSirGiNkPn6wqirwUDRD4STJC6_W_0ed_EcU",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wsoO79XrSirGiNkPn6wqirwUDRD4STJC6_W_0ed_EcU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1752963696,
+          "mode": "list",
+          "cachedResultName": "churn_customers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wsoO79XrSirGiNkPn6wqirwUDRD4STJC6_W_0ed_EcU/edit#gid=1752963696"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "churn_score": "={{ $json.churn_score }}",
+            "risk_action": "={{ $json.risk_action }}",
+            "risk_reason": "={{ $json.risk_reason }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "email": "={{ $json.email }}",
+            "plan_type": "={{ $json.plan_type }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "plan_type",
+              "displayName": "plan_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "subscription_start",
+              "displayName": "subscription_start",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_login",
+              "displayName": "last_login",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "support_tickets",
+              "displayName": "support_tickets",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "monthly_usage",
+              "displayName": "monthly_usage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "churn_score",
+              "displayName": "churn_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "risk_action",
+              "displayName": "risk_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "risk_reason",
+              "displayName": "risk_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email_sent",
+              "displayName": "email_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        96
+      ],
+      "id": "f3bef7cf-d904-469c-a700-c4cc3ddda1f4",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Eh6sOsmhX5WkmGuy",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "512b0140-a0e7-4740-884b-47f811ecf827",
+              "leftValue": "={{ $json.churn_score }}",
+              "rightValue": 60,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1392,
+        96
+      ],
+      "id": "7f0780ee-05ee-4890-9952-500ad4cf7572",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email}}",
+        "subject": "=We value your membership, {{ $json.customer_name }} 👋",
+        "message": "=Hi {{ $json.customer_name }},  We noticed you haven't been getting the most out of your  {{ $json.plan_type }} plan lately, and we want to help.  Our recommendation for you: {{ $json.risk_action }}  We'd love to schedule a quick call to make sure you're  getting full value from your subscription.  Reply to this email or book a time here.  Best, The Customer Success Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1520,
+        -32
+      ],
+      "id": "09f1ad92-b17d-4439-8571-571baea284c9",
+      "name": "Send a message",
+      "webhookId": "7a8e7713-5292-4f11-8538-eea81a6a5d53",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "u9OSp3d4HIXP65RY",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1wsoO79XrSirGiNkPn6wqirwUDRD4STJC6_W_0ed_EcU",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wsoO79XrSirGiNkPn6wqirwUDRD4STJC6_W_0ed_EcU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1752963696,
+          "mode": "list",
+          "cachedResultName": "churn_customers",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wsoO79XrSirGiNkPn6wqirwUDRD4STJC6_W_0ed_EcU/edit#gid=1752963696"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('If').item.json.row_number }}",
+            "email_sent": "yes"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "plan_type",
+              "displayName": "plan_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "subscription_start",
+              "displayName": "subscription_start",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_login",
+              "displayName": "last_login",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "support_tickets",
+              "displayName": "support_tickets",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "monthly_usage",
+              "displayName": "monthly_usage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "churn_score",
+              "displayName": "churn_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "risk_action",
+              "displayName": "risk_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "risk_reason",
+              "displayName": "risk_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_sent",
+              "displayName": "email_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1728,
+        -32
+      ],
+      "id": "c044492e-6fbe-4c7f-bba3-2690853ed256",
+      "name": "Update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Eh6sOsmhX5WkmGuy",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "56b3f416-60a3-4e01-9178-4e5d787a6de0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "85fe8b8fc72a57dd746841d2d4a24fc7189d2394c27e0aec3350210203257fae"
+  },
+  "id": "gmtwRp7j6xlIl9pH",
+  "tags": []
+}
