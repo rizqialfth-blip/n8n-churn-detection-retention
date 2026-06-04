@@ -3,7 +3,7 @@
 
 > **Automatically scans your entire customer base weekly, scores each customer's churn risk with AI, and sends personalized retention emails — before they cancel.**
 
-📹 **[Watch Demo →](https://loom.com/[LOOM_LINK])**
+📹 **[Watch Demo →](https://loom.com/[(https://www.loom.com/share/acaa2a1d048849dfb7c23d93ae61fe18)])**
 
 ---
 
